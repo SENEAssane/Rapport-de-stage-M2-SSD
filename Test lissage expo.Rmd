@@ -1,0 +1,329 @@
+---
+title: "SENE Assane Rapport de stage M2 SSD"
+output: pdf_document
+date: "2023-06-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+#On a besoin d'une serie de données relles qu'on alimente et une sous-serie d'apprentissage avec laquelle on fait nos prédictions semaine.
+
+library(readxl)
+library(ggplot2)
+
+donnees <- read_excel("C:/Users/Assane SENE/Downloads/Nombre de colis.xlsx")
+#head(donnees)
+
+serie_temporelle <- ts(donnees$`NOMBRE DE COLIS`, start = c(2023,04,15), frequency = 7)
+
+date_debut <- as.Date("2023-04-15")
+date_fin <- as.Date("2023-06-08")
+dates <- seq(date_debut, date_fin, by = "day")
+nouveau_df <- data.frame(Date = dates, Valeur = serie_temporelle)
+
+graphique <- ggplot(nouveau_df, aes(x = Date, y = Valeur)) +
+  geom_line(col = "#009999") +
+  labs(x = "Date", y = "Nombre de colis") +
+  theme(panel.background = element_rect(fill = "white"),
+        axis.line = element_line(color = "black"))
+
+print(graphique)
+
+
+#plot(serie_temporelle, col = "#009999", xlab = 'DATE', ylab = 'NOMBRE DE COLIS')
+#serie_temporelle1 <- ts(nouveau_df$Valeur, start = c(2023,04,15),frequency = 7)
+#15-04-23
+
+```
+
+
+```{r}
+#test
+library(forecast)
+lissage <- HoltWinters(serie_temporelle, alpha = 0.2, beta = 0.4, gamma = NULL)
+#seasonal = c("additive")
+pred <- predict(serie_temporelle, n.ahead = 7)
+print(pred)
+```
+
+
+```{r}
+## prendre le code à partir d'ici
+
+## 365/55 (7) pour avoir une fréquence adaptée à nos données étant donné
+##que ce sont des données journalières
+
+#plot.ts(Colis_ts, type = 'l', col = '#CC9933') #pour voir les dates sur l'axe des 
+                                                #abscisses
+
+library(readr)
+library(ggplot2)
+
+#Importation des données
+
+Colis <- read.table("C:/Users/Assane SENE/Documents/Nombre_de_colis.txt")
+
+Colis_ts <- ts(Colis, start = c(2023,04,15), frequency = 7)
+
+# Créer un data frame avec les dates et les valeurs de la série temporelles       
+date_debut <- as.Date("2023-04-15")
+date_fin <- as.Date("2023-07-03")
+dates <- seq(date_debut, date_fin, by = "day")
+nouveau_df <- data.frame(Date = dates, Valeur = Colis_ts)
+
+# Tracer la série temporelle
+graphique <- ggplot(nouveau_df, aes(x = Date, y = Valeur)) +
+  geom_line(col = "blue") +
+  labs(x = "Date", y = "Nombre de colis") +
+  theme(panel.background = element_rect(fill = "white"),
+        axis.line = element_line(color = "black"))
+
+print(graphique)
+
+```
+
+```{r}
+# faire apparaitre un motif saisonnier
+monthplot(Colis_ts, col= '#FF34B3')
+```
+```{r}
+fit1 <- decompose(Colis_ts)
+plot(fit1, col = '#666600')
+
+```
+
+
+
+```{r}
+## Dans un premier temps réalisons un lissage exponentiel simple i.e  on considérera que la série n'a pas de tendance, ni de saisonnalité. 
+## les valeurs de beta et gamma seront mises a NUL
+library(forecast)
+lissage_simple <- HoltWinters(Colis_ts, alpha = 0.1, beta = FALSE, gamma = FALSE)
+#print(lissage_simple$fitted)
+pred_simple <- predict(lissage_simple, n.ahead = 7) ##alpha = 0.1
+print(pred_simple)
+
+#lorsqu'on augmente la valeur de alpha les prédictions s'éloigne de plus en plus de la réalité
+
+```
+
+```{r}
+library(forecast)
+lissage_simple <- HoltWinters(Colis_ts, alpha = 0.6, beta = NULL, gamma = NULL)
+#print(lissage_simple$fitted)
+#pred_simple <- predict(lissage_simple, n.ahead = 7) ##alpha = 0.1
+#print(pred_simple)
+
+date_debut <- as.Date("2023-04-15")
+date_fin <- as.Date("2023-07-03")
+dates <- seq(date_debut, date_fin, by = "day")
+nouveau_df <- data.frame(Date = dates, Valeur = Colis_ts)
+
+## lissage_triple$fitted[, 1]: correspond à la prédiction à l'horizon 1  
+pred_df <- data.frame(Date = dates[(8:80)], Pred = lissage_simple$fitted[, 1]) ##80 = nombre de ligne de nouveau_df
+merged_df <- merge(nouveau_df, pred_df, by = "Date", all = TRUE)
+#combined_df <- rbind(nouveau_df, pred_df)
+ggplot(data = merged_df, aes(x = Date)) +
+  geom_line(aes(y = Valeur, color = "Série temporelle")) +
+  geom_line(aes(y = Pred, color = "Prédictions (Alpha = 0.3)")) +
+  labs(x = "Temps", y = "Nombre de Colis") +
+  scale_color_manual(values = c("#FF3E96", "#009ACD"))+
+  theme_minimal()
+```
+
+```{r}
+library(forecast)
+lissage_simple <- HoltWinters(Colis_ts, alpha = 0.6, beta = NULL, gamma = NULL)
+#print(lissage_simple$fitted)
+#pred_simple <- predict(lissage_simple, n.ahead = 7) ##alpha = 0.1
+#print(pred_simple)
+
+date_debut <- as.Date("2023-04-15")
+date_fin <- as.Date("2023-07-03")
+dates <- seq(date_debut, date_fin, by = "day")
+nouveau_df <- data.frame(Date = dates, Valeur = Colis_ts)
+
+## lissage_triple$fitted[, 1]: correspond à la prédiction à l'horizon 1  
+pred_df <- data.frame(Date = dates[(8:80)], Pred = lissage_simple$fitted[, 1]) ##80 = nombre de ligne de nouveau_df
+merged_df <- merge(nouveau_df, pred_df, by = "Date", all = TRUE)
+#combined_df <- rbind(nouveau_df, pred_df)
+ggplot(data = merged_df, aes(x = Date)) +
+  geom_line(aes(y = Valeur, color = "Série temporelle")) +
+  geom_line(aes(y = Pred, color = "Prédictions (Alpha = 0.6)")) +
+  labs(x = "Temps", y = "Nombre de Colis") +
+  scale_color_manual(values = c("#FF0000", "#009ACD"))+
+  theme_minimal()
+```
+
+
+
+
+```{r}
+## faisons un lissage exponentiel de Holt-Winters sans saisonnalité. 
+## la valeur de gamma sera donc laissée a NUL
+library(forecast)
+lissage_double <- HoltWinters(Colis_ts, alpha = 0.28, beta = 0.08, gamma = NULL)
+#print(lissage_double$fitted)
+pred_double <- predict(lissage_double, n.ahead = 7) #alpha = 0.28, beta = 0.08
+print(pred_double)
+## lorsqu'on augmente la valeur des parametres les prédictions s'éloigne de plus en plus de la réalité
+
+```
+
+
+
+
+```{r}
+
+#a = lissage_triple$fitted[73, 2] 
+#b = lissage_triple$fitted[73, 3] 
+#s = lissage_triple$fitted[(67:73), 4]
+#h = (1:7)
+#prediction = a + b*h + s  
+
+
+
+#rmse <- rmse(Colis_reel_ts, as.numeric(pred))
+
+## on va effectuer un lissage exponentiel de Holt-Winters avec saisonnalité ;c'est à dire on donne une valeur à gamma (le paramètre saisonnier)
+
+library(ggplot2)
+library(forecast)
+lissage_triple <- HoltWinters(Colis_ts, alpha = 0.2, beta = 0.2, gamma = 0.462, seasonal = c("additive"))
+
+#alpha = 0.2, beta = 0.2, gamma = 0.2 pour pred; gamma =0.462 rmse=7243.508
+#print(lissage_triple$fitted)                               =7243.463
+#pred <- predict(lissage_triple, n.ahead = 7)
+#print(pred)
+
+#plot.ts(Colis_ts, type = 'l', col = "#CC9933", xlab = 'Temps', ylab = 'Nombre de Colis')
+#plot(lissage_triple$fitted[, 1], type = 'l', col = "#00CCFF")
+
+
+
+date_debut <- as.Date("2023-04-15")
+date_fin <- as.Date("2023-07-03")
+dates <- seq(date_debut, date_fin, by = "day")
+nouveau_df <- data.frame(Date = dates, Valeur = Colis_ts)
+
+## lissage_triple$fitted[, 1]: correspond à la prédiction à l'horizon 1  
+pred_df <- data.frame(Date = dates[(8:80)], Pred = lissage_triple$fitted[, 1]) ##80 = nombre de ligne de nouveau_df
+merged_df <- merge(nouveau_df, pred_df, by = "Date", all = TRUE)
+#combined_df <- rbind(nouveau_df, pred_df)
+ggplot(data = merged_df, aes(x = Date)) +
+  geom_line(aes(y = Valeur, color = "Série temporelle")) +
+  geom_line(aes(y = Pred, color = "Prédictions h=1")) +
+  labs(x = "Temps", y = "Nombre de Colis") +
+  scale_color_manual(values = c("#00CDCD", "black"))+
+  theme_minimal()
+a = lissage_triple$fitted[73, 2] # achapo
+b = lissage_triple$fitted[73, 3] # bchapo
+s = lissage_triple$fitted[(67:73), 4] # composante saisonnière de période 7    
+                                    # 7 car on veut prédire la semaine à venir
+
+
+h = (1:7)
+
+prediction = a + b*h + s  #équivalent à pred mais ne donne les memes résultats de                                  predictions
+
+## a: barycentre de la dernière valeur de X_t observé et sa prévision à l'horizon 1
+## b: tendance/ barycentre de la dernière pente prédite bchapo_t-1 et de l'écart entre        les deux deernières ordonnées à l'origines prédites
+## h: horizon de prédiction (à l'horizon 7 par exemple ici)
+
+
+prediction_ts = ts(prediction, start = c(2023, 07, 03), frequency = 7)
+
+merged_df_2 <- merge(merged_df, data.frame(Date = dates[(81:87)], Pred_2 = prediction_ts), by = "Date", all = TRUE)
+
+new_dates <- seq(as.Date("2023-04-15"), as.Date("2023-07-10"), by = "day")
+merged_df_2$Date <- new_dates
+#print(merged_df_2)
+
+#install.packages("imputeTS")
+library(imputeTS)
+merged_df_2$Valeur_interp <- na.interp(merged_df_2$x) ## faut que j'interpole les valeurs pour qu'elles puissent avoir la meme longueur que la colonne date. x n'a pas la meme longueur que la colonne date
+merged_df_2$Valeur_interp[81:87] <- NA
+ggplot(data = merged_df_2, aes(x = new_dates)) +
+  # geom_line(aes(y = Valeur, color = "Série temporelle")) +
+  geom_line(aes(y = Valeur_interp, color = "Série temporelle")) +
+  geom_line(aes(y = Pred, color = "Prédictions h=1")) +
+  geom_line(aes(y = Pred_2 , color = "Semaine suivante")) +
+  labs(x = "Temps", y = "Nombre de Colis") +
+  scale_color_manual(values = c("deepskyblue1", "red", "black"))+
+  theme_minimal()
+
+```
+
+
+```{r}
+par(mfrow = c(2, 2))
+#print(prediction)
+pred <- predict(lissage_triple, n.ahead = 7)
+print(pred)
+Colis_reel_ts
+## avec pred, on a des meilleurs prédictions pour la semaine suivante, d'après la sortie.
+```
+
+
+
+```{r}
+#install.packages("Rtools")
+#install.packages("Metrics")
+#install.packages("Metrics", repos = "https://cran.rstudio.com")
+library("Metrics")
+library(readr)
+
+Colis_reel <- read.table("C:/Users/Assane SENE/Documents/Colis_Reel_semaine.txt")
+prediction_Excel <- read.table("C:/Users/Assane SENE/Documents/Prediction_Excel.txt")
+prediction_Amazon <- read.table("C:/Users/Assane SENE/Documents/Prediction_Amazon.txt")
+Colis_reel_ts <- ts(Colis_reel, start = c(2023,07,10), frequency = 7)
+prediction_Excel_ts <- ts(prediction_Excel, start = c(2023,07,10), frequency = 7)
+prediction_Amazon_ts <- ts(prediction_Amazon, start = c(2023,07,10), frequency = 7)
+#rmse1 <- rmse(Colis_reel_ts, prediction)
+#rmse1
+rmse_R<- rmse(Colis_reel_ts, as.numeric(pred))
+rmse_Excel<- rmse(Colis_reel_ts, as.numeric(prediction_Excel_ts))
+rmse_Amazon<- rmse(Colis_reel_ts, as.numeric(prediction_Amazon_ts))
+#par(mfrow = c(3, 1))
+cat("le RMSE de R est",rmse_R, "\n")
+cat("le RMSE de Excel est",rmse_Excel, "\n")
+cat("le RMSE de Amazon est",rmse_Amazon, "\n")
+
+```
+
+```{r}
+library(ggplot2)
+# Créer un data frame avec les dates du 4 au 10 juillet
+date_debut <- as.Date("2023-07-04")
+date_fin <- as.Date("2023-07-10")
+dates <- seq(date_debut, date_fin, by = "day")
+
+# Mettre les données dans un data frame
+data <- data.frame(Date = dates, valeur1 = Colis_reel_ts, valeur2 = prediction_Excel_ts, valeur3 = prediction_Amazon_ts, valeur4 = pred)
+
+# Tracer le graphique avec ggplot
+#data$Date <- as.Date(data$Date)
+graphique <- ggplot(data, aes(x = Date)) +
+  geom_line(aes(y = valeur1, color = "Réel")) +
+  geom_line(aes(y =  valeur2, color = "Excel")) +
+  geom_line(aes(y = valeur3, color = "Amazon")) +
+  geom_line(aes(y = valeur4, color = "Lissage")) +
+  labs(x = "Date", y = "Nombre de colis", color = "Prévision") +
+  #scale_x_date(date_labels = "%d-%m-%Y", date_breaks = "1 day") +
+  theme_minimal()
+
+print(graphique)
+
+```
+
+
+
+
+
+
+
