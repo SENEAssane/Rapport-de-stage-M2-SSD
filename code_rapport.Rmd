@@ -1,0 +1,197 @@
+---
+title: "SENE Assane Rapport de stage M2 SSD"
+output: pdf_document
+date: "2023-07-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+# Chargement de la librairie nécessaire
+library(ggplot2)
+
+# Définition des paramètres
+n <- 100  # Nombre d'observations
+sigma <- 1  # Écart-type du bruit
+
+# Génération de données aléatoires
+set.seed(123)  # Pour la reproductibilité
+time <- 1:n  # Variable temps
+noise <- rnorm(n, mean = 0, sd = sigma)  # Bruit aléatoire
+data <- noise
+
+# Création du dataframe
+df <- data.frame(time = time, value = data)
+
+# Affichage de la série temporelle simulée
+ggplot(data = df, aes(x = time, y = value)) +
+  geom_line(col = "#009999") +
+  labs(x = "Temps", y = "Valeur", title = "Série temporelle simulée sans tendance ni saisonnalité")+
+  theme(panel.background = element_rect(fill = "white"),
+        axis.line = element_line(color = "black"))
+
+```
+
+
+
+```{r}
+# chargement de la library ggplot2
+library(ggplot2)
+
+# Définir le nombre d'observations
+n <- 100
+
+# Générer une séquence de dates
+dates <- seq(as.Date("2022-01-01"), by = "month", length.out = n)
+
+# Générer une tendance linéaire
+tendance <- 1:n
+
+# Générer des erreurs aléatoires
+erreurs <- rnorm(n, mean = 0, sd = 10)
+
+# Calculer la série temporelle avec tendance
+serie_temporelle <- tendance + erreurs
+
+# Créer un data frame avec les dates et les valeurs de la série temporelle
+donnees <- data.frame(Date = dates, Valeur = serie_temporelle)
+
+# Tracer la série temporelle
+ggplot(donnees, aes(x = Date, y = Valeur)) +
+  geom_line() +
+  labs(x = "Date", y = "Valeur", title = "Série temporelle avec tendance") +
+  theme_minimal()
+
+```
+
+
+```{r}
+#série temporelle avec tendance et saisonnalité
+library(readr)
+library(ggplot2)
+
+#Importation des données
+traffic_temp <- read.table("C:/Users/Assane SENE/Downloads/traffic.txt")
+
+#Mettre les données sous format série temporelle
+traffic <- ts(traffic_temp, start = 1993, frequency = 12)
+
+
+# Convertir la série temporelle en un data frame
+df <- data.frame(Date = time(traffic), Value = as.vector(traffic))
+
+# Tracer le graphique avec ggplot
+ggplot(data = df, aes(x = Date, y = Value)) +
+  geom_line(color = "darkred") +
+  labs(x = "Temps", y = "X", title = "Graphique de la série temporelle") +
+  geom_vline(xintercept = 2001.75, linetype = "dashed") +
+  theme_minimal()
+
+```
+
+```{r}
+# Charger les packages nécessaires
+library(ggplot2)
+library(forecast)
+
+# Lissage exponentiel simple avec alpha = 0.1 et alpha = 0.3
+lissage_alpha_01 <- HoltWinters(traffic, alpha = 0.1, beta = NULL, gamma = NULL)
+lissage_alpha_03 <- HoltWinters(traffic, alpha = 0.3, beta = NULL, gamma = NULL)
+
+# Prédictions des lissages exponentiels simples
+prediction_alpha_01 <- predict(lissage_alpha_01, n.ahead = 178)
+prediction_alpha_03 <- predict(lissage_alpha_03, n.ahead = 178)
+
+# Créer un data frame avec les prédictions et les valeurs d'alpha
+df_pred <- data.frame(Date = rep(time(traffic) + 12/12, 2),
+                      Value = c(prediction_alpha_01, prediction_alpha_03),
+                      Alpha = c(rep("Alpha = 0.1", 178), rep("Alpha = 0.3", 178)))
+
+# Tracer le graphique avec ggplot en ajoutant les courbes de lissage avec légende
+ggplot() +
+  geom_line(data = df, aes(x = Date, y = Value), color = "darkred", size = 1, linetype = "solid") +
+  geom_line(data = df_pred, aes(x = Date, y = Value, color = Alpha), size = 1, linetype = "dashed") +
+  labs(x = "Temps", y = "X", title = "Graphique de la série temporelle avec lissage exponentiel simple") +
+  geom_vline(xintercept = 2001.75, linetype = "dashed") +
+  theme_minimal()
+
+```
+
+```{r}
+# Charger les packages nécessaires
+library(ggplot2)
+
+# Données du jeu de données traffic
+traffic_temp <- read.table("C:/Users/Assane SENE/Downloads/traffic.txt")
+traffic <- ts(traffic_temp, start = 1993, frequency = 12)
+df <- data.frame(Date = time(traffic), Value = as.vector(traffic))
+
+# Lissage exponentiel simple avec alpha = 0.1 et alpha = 0.3
+lissage_alpha_01 <- HoltWinters(traffic, alpha = 0.1, beta = NULL, gamma = NULL)
+lissage_alpha_03 <- HoltWinters(traffic, alpha = 0.3, beta = NULL, gamma = NULL)
+
+# Prédictions des lissages exponentiels simples
+prediction_alpha_01 <- predict(lissage_alpha_01, n.ahead = 12)$mean
+prediction_alpha_03 <- predict(lissage_alpha_03, n.ahead = 12)$mean
+
+# Créer un data frame avec les prédictions et les valeurs d'alpha
+df_pred_alpha_01 <- data.frame(Date = time(traffic),
+                               Value = prediction_alpha_01,
+                               Alpha = rep("Alpha = 0.1", length(prediction_alpha_01)))
+df_pred_alpha_03 <- data.frame(Date = time(traffic),
+                               Value = prediction_alpha_03,
+                               Alpha = rep("Alpha = 0.3", length(prediction_alpha_03)))
+
+df_pred <- rbind(df_pred_alpha_01, df_pred_alpha_03)
+
+# Tracer le graphique avec ggplot en ajoutant les courbes de lissage avec légende
+ggplot() +
+  geom_line(data = df, aes(x = Date, y = Value), color = "darkred", size = 1, linetype = "solid") +
+  geom_line(data = df_pred, aes(x = Date, y = Value, color = Alpha), size = 1, linetype = "dashed") +
+  labs(x = "Temps", y = "X", title = "Graphique de la série temporelle avec lissage exponentiel simple") +
+  geom_vline(xintercept = 2001.75, linetype = "dashed") +
+  theme_minimal()
+
+```
+
+```{r}
+# Charger les packages nécessaires
+library(ggplot2)
+
+
+# Lissage exponentiel simple avec alpha = 0.1
+lissage_simple <- HoltWinters(traffic, alpha = 0.9, beta = NULL, gamma = NULL)
+
+# Prédictions du lissage exponentiel simple
+prediction <- lissage_simple$fitted[, 1]
+data.frame(Date = time(traffic), Pred = lissage_triple$fitted[, 1])
+# Créer un data frame avec les prédictions
+df_pred <- data.frame(Date = time(traffic) + 12/12,
+                      Value = prediction ,
+                      Alpha = "Alpha = 0.9")
+
+# Tracer le graphique avec ggplot en ajoutant les courbes de lissage avec légende
+ggplot() +
+  geom_line(data = df, aes(x = Date, y = Value), color = "darkred", size = 1, linetype = "solid") +
+  geom_line(data = df_pred, aes(x = Date, y = Value, color = Alpha), size = 1, linetype = "dashed") +
+  labs(x = "Temps", y = "X", title = "Graphique de la série temporelle avec lissage exponentiel simple") +
+  geom_vline(xintercept = 2001.75, linetype = "dashed") +
+  theme_minimal()
+
+```
+
+
+
+
+```{r}
+traffic_a <- window(traffic, start = 1993, end = c(2000,12))
+lissage <- HoltWinters(traffic_a, alpha = 0.2, beta = 0.2, gamma = 0.2,
+seasonal = c("additive")) ## 84 est le nombre de ligne  
+
+```
+
+
